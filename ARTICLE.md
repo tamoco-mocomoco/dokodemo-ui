@@ -37,6 +37,8 @@ https://github.com/tamoco-mocomoco/dokodemo-ui
 
 **デモページ**: https://tamoco-mocomoco.github.io/dokodemo-ui/
 
+![ドラッグと閉じるボタンのデモ](ここにGIF：要素をドラッグで移動→閉じるボタンで非表示→再表示ボタンで復活)
+
 ### 特徴
 
 - 任意のHTML要素をドラッグで移動可能に
@@ -111,6 +113,8 @@ jsDelivrから読み込むだけで使えます。
   <iframe src="https://example.com"></iframe>
 </dokodemo-ui>
 ```
+
+![リサイズのデモ](ここにGIF：iframeを含む要素をリサイズ→端からドラッグで移動)
 
 ### 再表示する
 
