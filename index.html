@@ -33,20 +33,6 @@
     .restore-button:hover {
       background: rgba(255,255,255,0.2);
     }
-    .draggable-button {
-      padding: 14px 28px;
-      font-size: 16px;
-      border: none;
-      border-radius: 12px;
-      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
-      color: white;
-      font-weight: bold;
-      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
-      cursor: grab;
-    }
-    .draggable-button:active {
-      cursor: grabbing;
-    }
     .demo-card {
       background: white;
       padding: 20px;
@@ -95,11 +81,6 @@
   <button id="show-all" class="restore-button" style="margin-top: 10px;">
     閉じたUIを再表示
   </button>
-
-  <!-- 左上に配置（ドラッグ可能） -->
-  <dokodemo-ui position="top-left" padding="80">
-    <button id="action-button" class="draggable-button">ドラッグできるボタン</button>
-  </dokodemo-ui>
 
   <!-- 右上に配置（閉じるボタン付き・色指定） -->
   <dokodemo-ui id="closable-card" closable close-color="#3b82f6" position="top-right">
@@ -155,11 +136,6 @@
     // 閉じた時のイベント例
     document.getElementById('closable-card').addEventListener('close', () => {
       console.log('カードが閉じられました');
-    });
-
-    // ドラッグできるボタン
-    document.getElementById('action-button').addEventListener('click', () => {
-      alert('ボタンがクリックされました！');
     });
 
     // カード内のボタン

@@ -7,7 +7,7 @@ test.describe('dokodemo-ui', () => {
 
   test.describe('ドラッグ機能', () => {
     test('要素をドラッグして移動できる', async ({ page }) => {
-      const element = page.locator('dokodemo-ui').first();
+      const element = page.locator('#closable-card');
       const box = await element.boundingBox();
 
       if (!box) throw new Error('Element not found');
@@ -17,19 +17,19 @@ test.describe('dokodemo-ui', () => {
 
       await page.mouse.move(startX, startY);
       await page.mouse.down();
-      await page.mouse.move(startX + 100, startY + 50);
+      await page.mouse.move(startX - 100, startY + 50);
       await page.mouse.up();
 
       const newBox = await element.boundingBox();
       if (!newBox) throw new Error('Element not found after drag');
 
-      expect(newBox.x).toBeCloseTo(box.x + 100, 0);
+      expect(newBox.x).toBeCloseTo(box.x - 100, 0);
       expect(newBox.y).toBeCloseTo(box.y + 50, 0);
     });
 
     test('ドラッグ後にボタンクリックが発火しない', async ({ page }) => {
-      const element = page.locator('dokodemo-ui').first();
-      const button = element.locator('#action-button');
+      const element = page.locator('dokodemo-ui[position="bottom-left"]');
+      const button = element.locator('#btn-1');
       const box = await button.boundingBox();
 
       if (!box) throw new Error('Button not found');
@@ -47,7 +47,7 @@ test.describe('dokodemo-ui', () => {
       // ドラッグ操作
       await page.mouse.move(startX, startY);
       await page.mouse.down();
-      await page.mouse.move(startX + 50, startY + 30);
+      await page.mouse.move(startX + 50, startY - 30);
       await page.mouse.up();
 
       // 少し待機
@@ -55,20 +55,6 @@ test.describe('dokodemo-ui', () => {
 
       // ドラッグ後はクリックイベントが発火しないはず
       expect(dialogShown).toBe(false);
-    });
-
-    test('ボタンをクリックするとアラートが表示される', async ({ page }) => {
-      const button = page.locator('#action-button');
-
-      let dialogMessage = '';
-      page.on('dialog', async dialog => {
-        dialogMessage = dialog.message();
-        await dialog.dismiss();
-      });
-
-      await button.click();
-
-      expect(dialogMessage).toBe('ボタンがクリックされました！');
     });
   });
 
@@ -143,17 +129,6 @@ test.describe('dokodemo-ui', () => {
   });
 
   test.describe('位置指定', () => {
-    test('position="top-left"で左上に配置される', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[position="top-left"]');
-      const box = await element.boundingBox();
-
-      if (!box) throw new Error('Element not found');
-
-      // パディング80pxを考慮
-      expect(box.x).toBeCloseTo(80, 5);
-      expect(box.y).toBeCloseTo(80, 5);
-    });
-
     test('position="top-right"で右上に配置される', async ({ page }) => {
       const element = page.locator('dokodemo-ui[position="top-right"]');
       const box = await element.boundingBox();
