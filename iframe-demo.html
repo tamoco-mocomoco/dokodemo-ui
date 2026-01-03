@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>iframe デモ</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    body {
+      font-family: sans-serif;
+      margin: 0;
+      padding: 12px;
+      background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+      min-height: 100vh;
+    }
+    h3 {
+      margin: 0 0 8px 0;
+      color: #333;
+      font-size: clamp(11px, 3vw, 14px);
+    }
+    .counter {
+      display: flex;
+      align-items: center;
+      gap: clamp(6px, 2vw, 12px);
+      margin-bottom: 12px;
+    }
+    .counter button {
+      width: clamp(28px, 8vw, 36px);
+      height: clamp(28px, 8vw, 36px);
+      border: none;
+      border-radius: 6px;
+      font-size: clamp(14px, 4vw, 20px);
+      font-weight: bold;
+      cursor: pointer;
+      transition: transform 0.1s;
+    }
+    .counter button:hover {
+      transform: scale(1.1);
+    }
+    .counter button:active {
+      transform: scale(0.95);
+    }
+    .counter button.minus {
+      background: #ef4444;
+      color: white;
+    }
+    .counter button.plus {
+      background: #10b981;
+      color: white;
+    }
+    .counter .value {
+      font-size: clamp(18px, 6vw, 28px);
+      font-weight: bold;
+      min-width: clamp(30px, 10vw, 50px);
+      text-align: center;
+      color: #333;
+    }
+    .color-buttons {
+      display: flex;
+      gap: clamp(6px, 2vw, 10px);
+      flex-wrap: wrap;
+    }
+    .color-btn {
+      width: clamp(24px, 7vw, 32px);
+      height: clamp(24px, 7vw, 32px);
+      border: 2px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      transition: transform 0.1s;
+      flex-shrink: 0;
+    }
+    .color-btn:hover {
+      transform: scale(1.15);
+    }
+  </style>
+</head>
+<body>
+  <h3>カウンター</h3>
+  <div class="counter">
+    <button class="minus" onclick="updateCount(-1)">-</button>
+    <span class="value" id="count">0</span>
+    <button class="plus" onclick="updateCount(1)">+</button>
+  </div>
+
+  <h3>背景色を変更</h3>
+  <div class="color-buttons">
+    <button class="color-btn" style="background: #f5f7fa;" onclick="changeColor('#f5f7fa', '#c3cfe2')"></button>
+    <button class="color-btn" style="background: #ffecd2;" onclick="changeColor('#ffecd2', '#fcb69f')"></button>
+    <button class="color-btn" style="background: #a8edea;" onclick="changeColor('#a8edea', '#fed6e3')"></button>
+    <button class="color-btn" style="background: #d299c2;" onclick="changeColor('#d299c2', '#fef9d7')"></button>
+    <button class="color-btn" style="background: #667eea;" onclick="changeColor('#667eea', '#764ba2')"></button>
+  </div>
+
+  <script>
+    let count = 0;
+    function updateCount(delta) {
+      count += delta;
+      document.getElementById('count').textContent = count;
+    }
+    function changeColor(color1, color2) {
+      document.body.style.background = `linear-gradient(135deg, ${color1} 0%, ${color2} 100%)`;
+    }
+  </script>
+</body>
+</html>

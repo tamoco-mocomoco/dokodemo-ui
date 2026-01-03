@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>dokodemo-ui デモ</title>
+  <style>
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+    }
+    h1 {
+      color: white;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+    }
+    p {
+      color: rgba(255,255,255,0.9);
+    }
+    .restore-button {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: 2px solid rgba(255,255,255,0.8);
+      border-radius: 6px;
+      background: transparent;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    .restore-button:hover {
+      background: rgba(255,255,255,0.2);
+    }
+    .draggable-button {
+      padding: 14px 28px;
+      font-size: 16px;
+      border: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #ff6b6b 0%, #feca57 100%);
+      color: white;
+      font-weight: bold;
+      box-shadow: 0 4px 15px rgba(255, 107, 107, 0.4);
+      cursor: grab;
+    }
+    .draggable-button:active {
+      cursor: grabbing;
+    }
+    .demo-card {
+      background: white;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.2);
+      max-width: 200px;
+    }
+    .demo-card h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+    }
+    .demo-card p {
+      margin: 0;
+      color: #666;
+      font-size: 14px;
+    }
+    .card-button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 6px;
+      color: white;
+      font-weight: bold;
+      cursor: pointer;
+      transition: opacity 0.2s;
+    }
+    .card-button:hover {
+      opacity: 0.85;
+    }
+    .card-button.save {
+      background: #10b981;
+    }
+    .card-button.edit {
+      background: #3b82f6;
+    }
+    .card-button.delete {
+      background: #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>dokodemo-ui デモ</h1>
+  <p>下のUIをドラッグして自由に動かしてみてください！</p>
+
+  <!-- 再表示ボタン（ページに固定） -->
+  <button id="show-all" class="restore-button" style="margin-top: 10px;">
+    閉じたUIを再表示
+  </button>
+
+  <!-- 左上に配置（ドラッグ可能） -->
+  <dokodemo-ui position="top-left" padding="80">
+    <button id="action-button" class="draggable-button">ドラッグできるボタン</button>
+  </dokodemo-ui>
+
+  <!-- 右上に配置（閉じるボタン付き・色指定） -->
+  <dokodemo-ui id="closable-card" closable close-color="#3b82f6" position="top-right">
+    <div class="demo-card">
+      <h3>右上カード</h3>
+      <p>青いバツボタンで非表示にできます</p>
+    </div>
+  </dokodemo-ui>
+
+  <!-- 右下に配置（シンプルなバツボタン・外側） -->
+  <dokodemo-ui closable close-style="simple" close-position="outside" close-color="white" position="bottom-right" padding="30">
+    <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 16px; border-radius: 8px; box-shadow: 0 4px 6px rgba(0,0,0,0.2);">
+      🎉 外側に白バツ
+    </div>
+  </dokodemo-ui>
+
+  <!-- 左下に配置（複数ボタン付きカード） -->
+  <dokodemo-ui position="bottom-left">
+    <div class="demo-card">
+      <h3>操作パネル</h3>
+      <p style="margin-bottom: 12px;">ボタンをクリックしてみてください</p>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <button id="btn-1" class="card-button save">アラート1を表示</button>
+        <button id="btn-2" class="card-button edit">アラート2を表示</button>
+        <button id="btn-3" class="card-button delete">アラート3を表示</button>
+      </div>
+    </div>
+  </dokodemo-ui>
+
+  <!-- iframe の例（リサイズ可能） -->
+  <dokodemo-ui resizable closable close-style="simple" close-position="outside" close-color="#333" x="400" y="300" style="width: 320px; height: 250px;">
+    <div style="background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.3); width: 100%; height: 100%;">
+      <div style="background: #f5f5f5; padding: 8px 12px; font-size: 12px; color: #666; border-bottom: 1px solid #ddd;">
+        右下をドラッグでリサイズ
+      </div>
+      <iframe
+        src="./iframe-demo.html"
+        style="border: none; display: block; width: 100%; height: calc(100% - 33px);">
+      </iframe>
+    </div>
+  </dokodemo-ui>
+
+  <script type="module">
+    import './dokodemo-ui.js';
+
+    // 再表示ボタン
+    document.getElementById('show-all').addEventListener('click', () => {
+      document.querySelectorAll('dokodemo-ui').forEach(ui => {
+        ui.show();
+      });
+    });
+
+    // 閉じた時のイベント例
+    document.getElementById('closable-card').addEventListener('close', () => {
+      console.log('カードが閉じられました');
+    });
+
+    // ドラッグできるボタン
+    document.getElementById('action-button').addEventListener('click', () => {
+      alert('ボタンがクリックされました！');
+    });
+
+    // カード内のボタン
+    document.getElementById('btn-1').addEventListener('click', () => {
+      alert('アラート1');
+    });
+    document.getElementById('btn-2').addEventListener('click', () => {
+      alert('アラート2');
+    });
+    document.getElementById('btn-3').addEventListener('click', () => {
+      alert('アラート3');
+    });
+  </script>
+</body>
+</html>
