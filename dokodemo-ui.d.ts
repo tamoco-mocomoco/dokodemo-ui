@@ -29,6 +29,7 @@ declare class DokodemoUI extends HTMLElement {
     private resizeStartHeight;
     private positionInitialized;
     private iframePointerEvents;
+    private edgeSize;
     static get observedAttributes(): string[];
     get closable(): boolean;
     set closable(value: boolean);
@@ -55,6 +56,9 @@ declare class DokodemoUI extends HTMLElement {
     private initializePosition;
     private applyPosition;
     private setupDrag;
+    private isNearEdge;
+    private onMouseMoveForCursor;
+    private onMouseLeaveForCursor;
     private onClickCapture;
     private onMouseDown;
     private onTouchStart;

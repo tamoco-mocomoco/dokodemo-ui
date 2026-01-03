@@ -116,6 +116,22 @@ class DokodemoUI extends HTMLElement {
         this.resizeStartHeight = 0;
         this.positionInitialized = false;
         this.iframePointerEvents = new Map();
+        this.edgeSize = 8; // 端からの距離（px）
+        this.onMouseMoveForCursor = (e) => {
+            if (this.isDragging || this.isResizing)
+                return;
+            if (this.isNearEdge(e.clientX, e.clientY)) {
+                this.style.cursor = "grab";
+            }
+            else {
+                this.style.cursor = "";
+            }
+        };
+        this.onMouseLeaveForCursor = () => {
+            if (!this.isDragging) {
+                this.style.cursor = "";
+            }
+        };
         this.onClickCapture = (e) => {
             // 閉じるボタンのクリックは常に許可
             const path = e.composedPath();
@@ -132,6 +148,11 @@ class DokodemoUI extends HTMLElement {
             // 内部の入力要素などはドラッグを開始しない
             if (this.shouldIgnoreEvent(e))
                 return;
+            // 端からのみドラッグ可能
+            const path = e.composedPath();
+            const isEdgeOverlay = path.some((el) => el instanceof HTMLElement && el.classList.contains("edge-overlay"));
+            if (!isEdgeOverlay && !this.isNearEdge(e.clientX, e.clientY))
+                return;
             e.preventDefault();
             this.startDrag(e.clientX, e.clientY);
             document.addEventListener("mousemove", this.onMouseMove);
@@ -141,6 +162,11 @@ class DokodemoUI extends HTMLElement {
             if (this.shouldIgnoreEvent(e))
                 return;
             const touch = e.touches[0];
+            // 端からのみドラッグ可能
+            const path = e.composedPath();
+            const isEdgeOverlay = path.some((el) => el instanceof HTMLElement && el.classList.contains("edge-overlay"));
+            if (!isEdgeOverlay && !this.isNearEdge(touch.clientX, touch.clientY))
+                return;
             this.startDrag(touch.clientX, touch.clientY);
             document.addEventListener("touchmove", this.onTouchMove, { passive: false });
             document.addEventListener("touchend", this.onTouchEnd);
@@ -225,12 +251,11 @@ class DokodemoUI extends HTMLElement {
       <style>
         :host {
           position: fixed;
-          cursor: grab;
           user-select: none;
           z-index: 9999;
         }
         :host(.dragging) {
-          cursor: grabbing;
+          cursor: grabbing !important;
         }
         :host([hidden]) {
           display: none !important;
@@ -263,6 +288,38 @@ class DokodemoUI extends HTMLElement {
         }
         .resize-handle:hover {
           background: linear-gradient(135deg, transparent 50%, rgba(0,0,0,0.5) 50%);
+        }
+        .edge-overlay {
+          position: absolute;
+          pointer-events: auto;
+          cursor: grab;
+        }
+        .edge-overlay:active {
+          cursor: grabbing;
+        }
+        .edge-top {
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 8px;
+        }
+        .edge-bottom {
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 8px;
+        }
+        .edge-left {
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 8px;
+        }
+        .edge-right {
+          top: 0;
+          bottom: 0;
+          right: 0;
+          width: 8px;
         }
         .close-button {
           position: absolute;
@@ -314,6 +371,10 @@ class DokodemoUI extends HTMLElement {
       </style>
       <div class="container">
         <slot></slot>
+        <div class="edge-overlay edge-top"></div>
+        <div class="edge-overlay edge-bottom"></div>
+        <div class="edge-overlay edge-left"></div>
+        <div class="edge-overlay edge-right"></div>
         ${this.closable ? `<button class="close-button ${this.closeStyle}${this.closePosition === 'outside' ? ' outside' : ''}" aria-label="閉じる">×</button>` : ''}
         ${this.resizable ? '<div class="resize-handle"></div>' : ''}
       </div>
@@ -383,8 +444,21 @@ class DokodemoUI extends HTMLElement {
     setupDrag() {
         this.addEventListener("mousedown", this.onMouseDown);
         this.addEventListener("touchstart", this.onTouchStart, { passive: false });
+        this.addEventListener("mousemove", this.onMouseMoveForCursor);
+        this.addEventListener("mouseleave", this.onMouseLeaveForCursor);
         // ドラッグ後のクリックを無効化
         this.addEventListener("click", this.onClickCapture, true);
+    }
+    isNearEdge(clientX, clientY) {
+        const rect = this.getBoundingClientRect();
+        const x = clientX - rect.left;
+        const y = clientY - rect.top;
+        // 端からedgeSize px以内かチェック
+        const nearLeft = x < this.edgeSize;
+        const nearRight = x > rect.width - this.edgeSize;
+        const nearTop = y < this.edgeSize;
+        const nearBottom = y > rect.height - this.edgeSize;
+        return nearLeft || nearRight || nearTop || nearBottom;
     }
     shouldIgnoreEvent(e) {
         // composedPath() でShadow DOM内の実際のターゲットを取得
@@ -497,6 +571,8 @@ class DokodemoUI extends HTMLElement {
     disconnectedCallback() {
         this.removeEventListener("mousedown", this.onMouseDown);
         this.removeEventListener("touchstart", this.onTouchStart);
+        this.removeEventListener("mousemove", this.onMouseMoveForCursor);
+        this.removeEventListener("mouseleave", this.onMouseLeaveForCursor);
     }
 }
 customElements.define("dokodemo-ui", DokodemoUI);

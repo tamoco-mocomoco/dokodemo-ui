@@ -12,8 +12,9 @@ test.describe('dokodemo-ui', () => {
 
       if (!box) throw new Error('Element not found');
 
+      // 端（上部）からドラッグ
       const startX = box.x + box.width / 2;
-      const startY = box.y + box.height / 2;
+      const startY = box.y + 4; // 上端付近
 
       await page.mouse.move(startX, startY);
       await page.mouse.down();
@@ -29,10 +30,9 @@ test.describe('dokodemo-ui', () => {
 
     test('ドラッグ後にボタンクリックが発火しない', async ({ page }) => {
       const element = page.locator('dokodemo-ui[position="bottom-left"]');
-      const button = element.locator('#btn-1');
-      const box = await button.boundingBox();
+      const box = await element.boundingBox();
 
-      if (!box) throw new Error('Button not found');
+      if (!box) throw new Error('Element not found');
 
       // ダイアログハンドラを設定
       let dialogShown = false;
@@ -41,8 +41,9 @@ test.describe('dokodemo-ui', () => {
         await dialog.dismiss();
       });
 
+      // 端（上部）からドラッグ
       const startX = box.x + box.width / 2;
-      const startY = box.y + box.height / 2;
+      const startY = box.y + 4; // 上端付近
 
       // ドラッグ操作
       await page.mouse.move(startX, startY);
@@ -190,9 +191,9 @@ test.describe('dokodemo-ui', () => {
 
       if (!box) throw new Error('Element not found');
 
-      // ヘッダー部分をドラッグ
-      const startX = box.x + box.width / 2;
-      const startY = box.y + 15; // ヘッダー部分
+      // 端（左端）からドラッグ
+      const startX = box.x + 4; // 左端付近
+      const startY = box.y + box.height / 2;
 
       await page.mouse.move(startX, startY);
       await page.mouse.down();
