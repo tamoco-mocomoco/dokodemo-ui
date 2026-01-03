@@ -1,5 +1,5 @@
 ---
-title: "「このボタン邪魔だな...」を解決するWeb Component作った"
+title: "あのイルカも逃げられない！どこでもUIを動かして消せるWeb Componentを作った！"
 emoji: "🖱️"
 type: "tech"
 topics: ["javascript", "webcomponents", "typescript", "frontend"]
