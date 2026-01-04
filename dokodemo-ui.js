@@ -351,7 +351,7 @@ class DokodemoUI extends HTMLElement {
           height: 20px;
           top: 4px;
           right: 4px;
-          background: rgba(0,0,0,0.1);
+          background: transparent;
           color: ${this.closeColor};
           font-size: 18px;
           font-weight: bold;
