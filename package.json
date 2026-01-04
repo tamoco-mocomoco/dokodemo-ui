@@ -3,14 +3,38 @@
   "version": "1.0.0",
   "description": "ドラッグで自由に移動できるWeb Component",
   "main": "dokodemo-ui.js",
+  "types": "dokodemo-ui.d.ts",
   "type": "module",
+  "files": [
+    "dokodemo-ui.js",
+    "dokodemo-ui.d.ts"
+  ],
   "scripts": {
     "build": "tsc",
     "dev": "tsc --watch",
     "test": "playwright test",
     "test:ui": "playwright test --ui",
-    "test:headed": "playwright test --headed"
+    "test:headed": "playwright test --headed",
+    "prepublishOnly": "npm run build && npm test"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tamoco-mocomoco/dokodemo-ui.git"
+  },
+  "keywords": [
+    "web-component",
+    "draggable",
+    "ui",
+    "custom-element",
+    "floating",
+    "movable"
+  ],
+  "author": "tamoco-mocomoco",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/tamoco-mocomoco/dokodemo-ui/issues"
+  },
+  "homepage": "https://github.com/tamoco-mocomoco/dokodemo-ui#readme",
   "devDependencies": {
     "@playwright/test": "^1.57.0",
     "serve": "^14.2.5",
