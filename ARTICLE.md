@@ -40,7 +40,7 @@ https://github.com/tamoco-mocomoco/dokodemo-ui
 
 **デモページ**: https://tamoco-mocomoco.github.io/dokodemo-ui/
 
-![ドラッグと閉じるボタンのデモ](ここにGIF：要素をドラッグで移動→閉じるボタンで非表示→再表示ボタンで復活)
+![ドラッグと閉じるボタンのデモ](https://storage.googleapis.com/zenn-user-upload/530052e0449c-20260104.gif)
 
 ### 特徴
 
@@ -130,7 +130,7 @@ import "dokodemo-ui";
 </dokodemo-ui>
 ```
 
-![リサイズのデモ](ここにGIF：iframeを含む要素をリサイズ→端からドラッグで移動)
+![リサイズのデモ](https://storage.googleapis.com/zenn-user-upload/1ac15b1330db-20260104.gif)
 
 ### 再表示する
 
