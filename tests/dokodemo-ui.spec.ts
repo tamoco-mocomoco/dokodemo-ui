@@ -8,8 +8,10 @@ test.describe('dokodemo-ui', () => {
   test.describe('ドラッグ機能', () => {
     test('要素をドラッグして移動できる', async ({ page }) => {
       const element = page.locator('#closable-card');
-      const box = await element.boundingBox();
+      await element.waitFor({ state: 'visible' });
+      await page.waitForTimeout(100); // レンダリング完了を待機
 
+      const box = await element.boundingBox();
       if (!box) throw new Error('Element not found');
 
       // 端（上部）からドラッグ
@@ -18,7 +20,7 @@ test.describe('dokodemo-ui', () => {
 
       await page.mouse.move(startX, startY);
       await page.mouse.down();
-      await page.mouse.move(startX - 100, startY + 50);
+      await page.mouse.move(startX - 100, startY + 50, { steps: 10 });
       await page.mouse.up();
 
       const newBox = await element.boundingBox();
