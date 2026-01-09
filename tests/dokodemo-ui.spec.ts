@@ -31,7 +31,7 @@ test.describe('dokodemo-ui', () => {
     });
 
     test('ドラッグ後にボタンクリックが発火しない', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[position="bottom-left"]');
+      const element = page.locator('dokodemo-ui[dokodemo-position="bottom-left"]');
       const box = await element.boundingBox();
 
       if (!box) throw new Error('Element not found');
@@ -104,7 +104,7 @@ test.describe('dokodemo-ui', () => {
 
   test.describe('リサイズ機能', () => {
     test('リサイズハンドルでサイズを変更できる', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[resizable]');
+      const element = page.locator('dokodemo-ui[dokodemo-resizable]');
       const initialBox = await element.boundingBox();
 
       if (!initialBox) throw new Error('Element not found');
@@ -132,8 +132,18 @@ test.describe('dokodemo-ui', () => {
   });
 
   test.describe('位置指定', () => {
-    test('position="top-right"で右上に配置される', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[position="top-right"]');
+    test('position属性がdokodemo-プレフィックスに正規化される', async ({ page }) => {
+      const element = page.locator('dokodemo-ui[dokodemo-position="top-right"]');
+
+      // プレフィックス付きに変換されている
+      await expect(element).toHaveAttribute('dokodemo-position', 'top-right');
+      // 元の属性は削除されている
+      const hasPosition = await element.evaluate((el) => el.hasAttribute('position'));
+      expect(hasPosition).toBe(false);
+    });
+
+    test('dokodemo-position="top-right"で右上に配置される', async ({ page }) => {
+      const element = page.locator('dokodemo-ui[dokodemo-position="top-right"]');
       const box = await element.boundingBox();
       const viewport = page.viewportSize();
 
@@ -143,8 +153,8 @@ test.describe('dokodemo-ui', () => {
       expect(box.x + box.width).toBeCloseTo(viewport.width - 20, 5);
     });
 
-    test('position="bottom-left"で左下に配置される', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[position="bottom-left"]');
+    test('dokodemo-position="bottom-left"で左下に配置される', async ({ page }) => {
+      const element = page.locator('dokodemo-ui[dokodemo-position="bottom-left"]');
       const box = await element.boundingBox();
       const viewport = page.viewportSize();
 
@@ -155,8 +165,8 @@ test.describe('dokodemo-ui', () => {
       expect(box.y + box.height).toBeCloseTo(viewport.height - 20, 5);
     });
 
-    test('position="bottom-right"で右下に配置される', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[position="bottom-right"]');
+    test('dokodemo-position="bottom-right"で右下に配置される', async ({ page }) => {
+      const element = page.locator('dokodemo-ui[dokodemo-position="bottom-right"]');
       const box = await element.boundingBox();
       const viewport = page.viewportSize();
 
@@ -188,7 +198,7 @@ test.describe('dokodemo-ui', () => {
 
   test.describe('iframe内のインタラクション', () => {
     test('iframeを含む要素をドラッグできる', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[resizable]');
+      const element = page.locator('dokodemo-ui[dokodemo-resizable]');
       const box = await element.boundingBox();
 
       if (!box) throw new Error('Element not found');
@@ -210,7 +220,7 @@ test.describe('dokodemo-ui', () => {
     });
 
     test('iframe内のボタンをクリックできる', async ({ page }) => {
-      const element = page.locator('dokodemo-ui[resizable]');
+      const element = page.locator('dokodemo-ui[dokodemo-resizable]');
       const iframe = element.frameLocator('iframe');
 
       // カウンターの値を取得
@@ -228,6 +238,97 @@ test.describe('dokodemo-ui', () => {
       // -ボタンをクリック
       await iframe.locator('.minus').click();
       await expect(countElement).toHaveText('1');
+    });
+  });
+
+  test.describe('外部モード (mode="external")', () => {
+    test('ターゲット要素をドラッグして移動できる', async ({ page }) => {
+      const targetWidget = page.locator('#third-party-widget');
+      const overlay = page.locator('#external-demo');
+
+      await targetWidget.waitFor({ state: 'visible' });
+      await overlay.waitFor({ state: 'attached' });
+      await page.waitForTimeout(100);
+
+      const initialBox = await targetWidget.boundingBox();
+      if (!initialBox) throw new Error('Target widget not found');
+
+      // オーバーレイの端からドラッグ
+      const startX = initialBox.x + 4;
+      const startY = initialBox.y + initialBox.height / 2;
+
+      await page.mouse.move(startX, startY);
+      await page.mouse.down();
+      await page.mouse.move(startX - 100, startY - 50, { steps: 10 });
+      await page.mouse.up();
+
+      const newBox = await targetWidget.boundingBox();
+      if (!newBox) throw new Error('Target widget not found after drag');
+
+      // ターゲット要素が移動している（小数点の誤差を許容）
+      expect(newBox.x).toBeCloseTo(initialBox.x - 100, 0);
+      expect(newBox.y).toBeCloseTo(initialBox.y - 50, 0);
+    });
+
+    test('閉じるボタンでターゲット要素を非表示にできる', async ({ page }) => {
+      const targetWidget = page.locator('#third-party-widget');
+      const overlay = page.locator('#external-demo');
+
+      await expect(targetWidget).toBeVisible();
+
+      // 閉じるボタンをクリック
+      const closeButton = overlay.locator('.close-button');
+      await closeButton.click();
+
+      await expect(targetWidget).toBeHidden();
+    });
+
+    test('show()でターゲット要素を再表示できる', async ({ page }) => {
+      const targetWidget = page.locator('#third-party-widget');
+      const overlay = page.locator('#external-demo');
+
+      // 閉じるボタンをクリック
+      const closeButton = overlay.locator('.close-button');
+      await closeButton.click();
+      await expect(targetWidget).toBeHidden();
+
+      // show-allボタンで再表示
+      await page.locator('#show-all').click();
+
+      await expect(targetWidget).toBeVisible();
+    });
+
+    test('dokodemo-* 以外の属性がターゲットに転送される', async ({ page }) => {
+      // 属性転送テスト用の要素を動的に追加
+      await page.evaluate(() => {
+        const target = document.createElement('div');
+        target.id = 'forward-test-target';
+        target.style.cssText = 'position: fixed; right: 200px; bottom: 200px; width: 50px; height: 50px; background: blue;';
+        document.body.appendChild(target);
+
+        const overlay = document.createElement('dokodemo-ui');
+        overlay.setAttribute('dokodemo-target', '#forward-test-target');
+        overlay.setAttribute('dokodemo-mode', 'external');
+        overlay.setAttribute('dokodemo-closable', '');
+        // 転送される属性
+        overlay.setAttribute('data-api-key', 'test-key');
+        overlay.setAttribute('theme', 'dark');
+        overlay.setAttribute('lang', 'ja');
+        document.body.appendChild(overlay);
+      });
+
+      // 少し待機
+      await page.waitForTimeout(100);
+
+      // ターゲット要素に属性が転送されているか確認
+      const target = page.locator('#forward-test-target');
+      await expect(target).toHaveAttribute('data-api-key', 'test-key');
+      await expect(target).toHaveAttribute('theme', 'dark');
+      await expect(target).toHaveAttribute('lang', 'ja');
+
+      // dokodemo-* 属性は転送されていないことを確認
+      const hasDokodemoClosable = await target.evaluate((el) => el.hasAttribute('dokodemo-closable'));
+      expect(hasDokodemoClosable).toBe(false);
     });
   });
 });

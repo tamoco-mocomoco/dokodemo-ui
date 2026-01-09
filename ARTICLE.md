@@ -50,6 +50,7 @@ https://github.com/tamoco-mocomoco/dokodemo-ui
 - リサイズ機能
 - 位置プリセット（四隅・中央）
 - マウス・タッチ対応
+- 外部モード（サードパーティウィジェット対応）
 
 ## 使い方
 
@@ -140,18 +141,76 @@ JavaScript から`show()`メソッドで再表示できます。
 <button onclick="document.querySelector('dokodemo-ui').show()">再表示</button>
 ```
 
+### Web Components と組み合わせる
+
+他の Web Components もそのまま囲むだけで動かせるようになります。
+
+```html
+<!-- チャットウィジェット -->
+<dokodemo-ui closable position="bottom-right">
+  <my-chat-widget></my-chat-widget>
+</dokodemo-ui>
+
+<!-- カスタム動画プレーヤー -->
+<dokodemo-ui resizable>
+  <custom-video-player src="video.mp4"></custom-video-player>
+</dokodemo-ui>
+```
+
+Shadow DOM を使った Web Components でも、端をドラッグする方式なので問題なく動作します。
+
+### サードパーティウィジェットを動かす（外部モード）
+
+Channel Talk のようなサードパーティのチャットウィジェットは、Shadow DOM や styled-components を使っていることが多く、DOM を移動すると壊れてしまいます。
+
+そこで、**外部モード**を用意しました。DOM を移動せずに、透明なオーバーレイを重ねて位置を制御します。
+
+```html
+<!-- ターゲット要素はそのまま -->
+<div id="ch-plugin" style="position: fixed; right: 20px; bottom: 20px;">
+  <!-- サードパーティのウィジェット -->
+</div>
+
+<!-- オーバーレイで制御 -->
+<dokodemo-ui target="#ch-plugin" mode="external" closable></dokodemo-ui>
+```
+
+外部モードの特徴：
+- ターゲット要素の DOM 構造を変更しない
+- Shadow DOM や styled-components に影響なし
+- `!important` で位置を上書きするので、元の CSS 設定を無視できる
+
+### 属性の自動転送
+
+外部モードでは、`dokodemo-*` プレフィックス以外の属性がターゲット要素に自動転送されます。
+
+```html
+<dokodemo-ui
+  dokodemo-target="#ch-plugin"
+  dokodemo-mode="external"
+  dokodemo-closable
+  api-key="xxx"
+  theme="dark"
+>
+</dokodemo-ui>
+```
+
+`dokodemo-*` は dokodemo-ui が使用し、それ以外（`api-key`, `theme`）はターゲットに転送されます。これにより、サードパーティウィジェットの設定を dokodemo-ui 経由で行えます。
+
 ## 属性一覧
 
-| 属性             | 説明                                  | デフォルト |
-| ---------------- | ------------------------------------- | ---------- |
-| `closable`       | 閉じるボタンを表示                    | -          |
-| `close-style`    | ボタンスタイル（`circle` / `simple`） | `circle`   |
-| `close-position` | ボタン位置（`inside` / `outside`）    | `inside`   |
-| `close-color`    | ボタンの色                            | `#ff5f57`  |
-| `resizable`      | リサイズ可能                          | -          |
-| `position`       | 初期位置                              | -          |
-| `padding`        | 角からの距離（px）                    | `20`       |
-| `x`, `y`         | 座標を直接指定                        | -          |
+| 属性             | 説明                                  | デフォルト   |
+| ---------------- | ------------------------------------- | ------------ |
+| `closable`       | 閉じるボタンを表示                    | -            |
+| `close-style`    | ボタンスタイル（`circle` / `simple`） | `circle`     |
+| `close-position` | ボタン位置（`inside` / `outside`）    | `inside`     |
+| `close-color`    | ボタンの色                            | `#ff5f57`    |
+| `resizable`      | リサイズ可能                          | -            |
+| `position`       | 初期位置                              | -            |
+| `padding`        | 角からの距離（px）                    | `20`         |
+| `x`, `y`         | 座標を直接指定                        | -            |
+| `target`         | 外部モードのターゲット要素（CSS セレクタ） | -        |
+| `mode`           | モード（`internal` / `external`）     | `internal`   |
 
 ## 技術的なポイント
 
@@ -241,6 +300,8 @@ test("要素をドラッグして移動できる", async ({ page }) => {
 - 動画のピクチャーインピクチャー風表示
 - デバッグ用パネル
 - 通知・アラート
+- Web Components を使ったウィジェット
+- サードパーティウィジェットの位置調整（外部モード）
 
 ぜひ使ってみてください！
 

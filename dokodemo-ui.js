@@ -16,92 +16,166 @@
  * - x, y: 初期位置を直接指定（単位はpx）※positionより優先
  *   <dokodemo-ui x="100" y="200">...</dokodemo-ui>
  */
+// dokodemo-ui 固有の属性名（プレフィックスなし）
+const DOKODEMO_ATTRIBUTE_NAMES = new Set([
+    "closable",
+    "close-style",
+    "close-position",
+    "close-color",
+    "resizable",
+    "position",
+    "padding",
+    "x",
+    "y",
+    "target",
+    "mode",
+]);
+// 転送しない属性（HTML標準属性）
+const NON_FORWARDED_ATTRIBUTES = new Set([
+    "hidden",
+    "style",
+    "class",
+    "id",
+    "slot",
+    "tabindex",
+]);
+// dokodemo-ui 固有の属性かどうか判定
+function isDokodemoAttribute(name) {
+    // dokodemo-* プレフィックス付き
+    if (name.startsWith("dokodemo-"))
+        return true;
+    // プレフィックスなしでも既知の属性名ならtrue
+    return DOKODEMO_ATTRIBUTE_NAMES.has(name);
+}
+// 転送すべき属性かどうか判定
+function shouldForwardAttribute(name) {
+    // dokodemo-ui 固有の属性は転送しない
+    if (isDokodemoAttribute(name))
+        return false;
+    // HTML標準属性は転送しない
+    if (NON_FORWARDED_ATTRIBUTES.has(name))
+        return false;
+    return true;
+}
 class DokodemoUI extends HTMLElement {
     static get observedAttributes() {
         return ["closable"];
     }
+    // ヘルパー: dokodemo-* プレフィックス付きまたはレガシー属性を取得
+    getDokodemoAttr(name) {
+        return this.getAttribute(`dokodemo-${name}`) ?? this.getAttribute(name);
+    }
+    hasDokodemoAttr(name) {
+        return this.hasAttribute(`dokodemo-${name}`) || this.hasAttribute(name);
+    }
     get closable() {
-        return this.hasAttribute("closable");
+        return this.hasDokodemoAttr("closable");
     }
     set closable(value) {
         if (value) {
-            this.setAttribute("closable", "");
+            this.setAttribute("dokodemo-closable", "");
         }
         else {
+            this.removeAttribute("dokodemo-closable");
             this.removeAttribute("closable");
         }
     }
     get position() {
-        return this.getAttribute("position");
+        return this.getDokodemoAttr("position");
     }
     set position(value) {
         if (value) {
-            this.setAttribute("position", value);
+            this.setAttribute("dokodemo-position", value);
         }
         else {
+            this.removeAttribute("dokodemo-position");
             this.removeAttribute("position");
         }
     }
     get padding() {
-        return parseInt(this.getAttribute("padding") || "20", 10);
+        return parseInt(this.getDokodemoAttr("padding") || "20", 10);
     }
     set padding(value) {
-        this.setAttribute("padding", String(value));
+        this.setAttribute("dokodemo-padding", String(value));
     }
     get closeColor() {
-        return this.getAttribute("close-color") || "#ff5f57";
+        return this.getDokodemoAttr("close-color") || "#ff5f57";
     }
     set closeColor(value) {
-        this.setAttribute("close-color", value);
+        this.setAttribute("dokodemo-close-color", value);
     }
     get closeStyle() {
-        return this.getAttribute("close-style") || "circle";
+        return this.getDokodemoAttr("close-style") || "circle";
     }
     set closeStyle(value) {
-        this.setAttribute("close-style", value);
+        this.setAttribute("dokodemo-close-style", value);
     }
     get closePosition() {
-        return this.getAttribute("close-position") || "inside";
+        return this.getDokodemoAttr("close-position") || "inside";
     }
     set closePosition(value) {
-        this.setAttribute("close-position", value);
+        this.setAttribute("dokodemo-close-position", value);
     }
     get resizable() {
-        return this.hasAttribute("resizable");
+        return this.hasDokodemoAttr("resizable");
     }
     set resizable(value) {
         if (value) {
-            this.setAttribute("resizable", "");
+            this.setAttribute("dokodemo-resizable", "");
         }
         else {
+            this.removeAttribute("dokodemo-resizable");
             this.removeAttribute("resizable");
         }
     }
     get x() {
-        const attr = this.getAttribute("x");
+        const attr = this.getDokodemoAttr("x");
         return attr ? parseInt(attr, 10) : null;
     }
     set x(value) {
         if (value !== null) {
-            this.setAttribute("x", String(value));
+            this.setAttribute("dokodemo-x", String(value));
             this.style.left = `${value}px`;
         }
         else {
+            this.removeAttribute("dokodemo-x");
             this.removeAttribute("x");
         }
     }
     get y() {
-        const attr = this.getAttribute("y");
+        const attr = this.getDokodemoAttr("y");
         return attr ? parseInt(attr, 10) : null;
     }
     set y(value) {
         if (value !== null) {
-            this.setAttribute("y", String(value));
+            this.setAttribute("dokodemo-y", String(value));
             this.style.top = `${value}px`;
         }
         else {
+            this.removeAttribute("dokodemo-y");
             this.removeAttribute("y");
         }
+    }
+    get target() {
+        return this.getDokodemoAttr("target");
+    }
+    set target(value) {
+        if (value) {
+            this.setAttribute("dokodemo-target", value);
+        }
+        else {
+            this.removeAttribute("dokodemo-target");
+            this.removeAttribute("target");
+        }
+    }
+    get mode() {
+        return this.getDokodemoAttr("mode") || "internal";
+    }
+    set mode(value) {
+        this.setAttribute("dokodemo-mode", value);
+    }
+    get isExternalMode() {
+        return this.mode === "external" && this.target !== null;
     }
     constructor() {
         super();
@@ -117,6 +191,19 @@ class DokodemoUI extends HTMLElement {
         this.positionInitialized = false;
         this.iframePointerEvents = new Map();
         this.edgeSize = 8; // 端からの距離（px）
+        this.targetElement = null;
+        this.externalObserver = null;
+        this.externalResizeObserver = null;
+        this.attributeForwardObserver = null;
+        this.syncWithTarget = () => {
+            if (!this.targetElement)
+                return;
+            const rect = this.targetElement.getBoundingClientRect();
+            this.style.left = `${rect.left}px`;
+            this.style.top = `${rect.top}px`;
+            this.style.width = `${rect.width}px`;
+            this.style.height = `${rect.height}px`;
+        };
         this.onMouseMoveForCursor = (e) => {
             if (this.isDragging || this.isResizing)
                 return;
@@ -168,7 +255,9 @@ class DokodemoUI extends HTMLElement {
             if (!isEdgeOverlay && !this.isNearEdge(touch.clientX, touch.clientY))
                 return;
             this.startDrag(touch.clientX, touch.clientY);
-            document.addEventListener("touchmove", this.onTouchMove, { passive: false });
+            document.addEventListener("touchmove", this.onTouchMove, {
+                passive: false,
+            });
             document.addEventListener("touchend", this.onTouchEnd);
         };
         this.onMouseMove = (e) => {
@@ -206,7 +295,9 @@ class DokodemoUI extends HTMLElement {
             e.stopPropagation();
             const touch = e.touches[0];
             this.startResize(touch.clientX, touch.clientY);
-            document.addEventListener("touchmove", this.onResizeTouchMove, { passive: false });
+            document.addEventListener("touchmove", this.onResizeTouchMove, {
+                passive: false,
+            });
             document.addEventListener("touchend", this.onResizeTouchEnd);
         };
         this.onResizeMouseMove = (e) => {
@@ -235,10 +326,217 @@ class DokodemoUI extends HTMLElement {
         this.attachShadow({ mode: "open" });
     }
     connectedCallback() {
-        this.render();
+        // 既知の属性にプレフィックスを自動付与
+        this.normalizeAttributes();
+        if (this.isExternalMode) {
+            this.setupExternalMode();
+        }
+        else {
+            this.render();
+            this.setupDrag();
+            this.setupCloseButton();
+            this.setupResize();
+        }
+    }
+    // 既知の属性を dokodemo-* プレフィックス付きに正規化（元の属性は削除）
+    normalizeAttributes() {
+        for (const name of DOKODEMO_ATTRIBUTE_NAMES) {
+            if (this.hasAttribute(name)) {
+                const value = this.getAttribute(name);
+                if (!this.hasAttribute(`dokodemo-${name}`)) {
+                    this.setAttribute(`dokodemo-${name}`, value || "");
+                }
+                this.removeAttribute(name);
+            }
+        }
+    }
+    setupExternalMode() {
+        // ターゲット要素を取得（まだなければ待機）
+        this.findTargetElement();
+        if (!this.targetElement) {
+            // 要素がまだ存在しない場合、MutationObserverで監視
+            this.externalObserver = new MutationObserver(() => {
+                if (this.findTargetElement()) {
+                    this.externalObserver?.disconnect();
+                    this.initExternalOverlay();
+                }
+            });
+            this.externalObserver.observe(document.body, {
+                childList: true,
+                subtree: true,
+            });
+        }
+        else {
+            this.initExternalOverlay();
+        }
+    }
+    findTargetElement() {
+        if (!this.target)
+            return false;
+        this.targetElement = document.querySelector(this.target);
+        return this.targetElement !== null;
+    }
+    initExternalOverlay() {
+        if (!this.targetElement || !this.shadowRoot)
+            return;
+        // オーバーレイとしてレンダリング
+        this.renderExternalOverlay();
+        this.syncWithTarget();
+        // ターゲット要素のサイズ変化を監視
+        this.externalResizeObserver = new ResizeObserver(() => {
+            this.syncWithTarget();
+        });
+        this.externalResizeObserver.observe(this.targetElement);
+        // ウィンドウリサイズにも対応
+        window.addEventListener("resize", this.syncWithTarget);
+        // 属性転送: 初期属性を転送
+        this.forwardAllAttributes();
+        // 属性転送: 属性変更を監視して転送
+        this.attributeForwardObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                if (mutation.type === "attributes" && mutation.attributeName) {
+                    this.forwardAttribute(mutation.attributeName);
+                }
+            }
+        });
+        this.attributeForwardObserver.observe(this, { attributes: true });
         this.setupDrag();
         this.setupCloseButton();
-        this.setupResize();
+    }
+    // 全属性を転送
+    forwardAllAttributes() {
+        if (!this.targetElement)
+            return;
+        for (const attr of Array.from(this.attributes)) {
+            this.forwardAttribute(attr.name);
+        }
+    }
+    // 単一属性を転送
+    forwardAttribute(name) {
+        if (!this.targetElement)
+            return;
+        if (!shouldForwardAttribute(name))
+            return;
+        const value = this.getAttribute(name);
+        if (value !== null) {
+            this.targetElement.setAttribute(name, value);
+        }
+        else {
+            this.targetElement.removeAttribute(name);
+        }
+    }
+    renderExternalOverlay() {
+        if (!this.shadowRoot)
+            return;
+        this.shadowRoot.innerHTML = `
+      <style>
+        :host {
+          position: fixed;
+          user-select: none;
+          z-index: 10000;
+          pointer-events: none;
+        }
+        :host(.dragging) {
+          cursor: grabbing !important;
+        }
+        :host([hidden]) {
+          display: none !important;
+        }
+        .container {
+          position: relative;
+          width: 100%;
+          height: 100%;
+        }
+        .edge-overlay {
+          position: absolute;
+          pointer-events: auto;
+          cursor: grab;
+        }
+        .edge-overlay:active {
+          cursor: grabbing;
+        }
+        .edge-top {
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 8px;
+        }
+        .edge-bottom {
+          bottom: 0;
+          left: 0;
+          right: 0;
+          height: 8px;
+        }
+        .edge-left {
+          top: 0;
+          bottom: 0;
+          left: 0;
+          width: 8px;
+        }
+        .edge-right {
+          top: 0;
+          bottom: 0;
+          right: 0;
+          width: 8px;
+        }
+        .close-button {
+          position: absolute;
+          top: -8px;
+          right: -8px;
+          border: none;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          transition: transform 0.1s, opacity 0.1s;
+          pointer-events: auto;
+        }
+        .close-button.circle {
+          width: 20px;
+          height: 20px;
+          border-radius: 50%;
+          background: ${this.closeColor};
+          color: white;
+          font-size: 14px;
+          line-height: 1;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+        .close-button.circle:hover {
+          filter: brightness(0.85);
+          transform: scale(1.1);
+        }
+        .close-button.simple {
+          width: 20px;
+          height: 20px;
+          top: 4px;
+          right: 4px;
+          background: transparent;
+          color: ${this.closeColor};
+          font-size: 18px;
+          font-weight: bold;
+          line-height: 1;
+          text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+          border-radius: 4px;
+        }
+        .close-button.simple.outside {
+          top: -20px;
+          right: -20px;
+        }
+        .close-button.simple:hover {
+          opacity: 0.7;
+          transform: scale(1.1);
+        }
+      </style>
+      <div class="container">
+        <div class="edge-overlay edge-top"></div>
+        <div class="edge-overlay edge-bottom"></div>
+        <div class="edge-overlay edge-left"></div>
+        <div class="edge-overlay edge-right"></div>
+        ${this.closable
+            ? `<button class="close-button ${this.closeStyle}${this.closePosition === "outside" ? " outside" : ""}" aria-label="閉じる">×</button>`
+            : ""}
+      </div>
+    `;
     }
     attributeChangedCallback() {
         this.render();
@@ -375,8 +673,10 @@ class DokodemoUI extends HTMLElement {
         <div class="edge-overlay edge-bottom"></div>
         <div class="edge-overlay edge-left"></div>
         <div class="edge-overlay edge-right"></div>
-        ${this.closable ? `<button class="close-button ${this.closeStyle}${this.closePosition === 'outside' ? ' outside' : ''}" aria-label="閉じる">×</button>` : ''}
-        ${this.resizable ? '<div class="resize-handle"></div>' : ''}
+        ${this.closable
+            ? `<button class="close-button ${this.closeStyle}${this.closePosition === "outside" ? " outside" : ""}" aria-label="閉じる">×</button>`
+            : ""}
+        ${this.resizable ? '<div class="resize-handle"></div>' : ""}
       </div>
     `;
         // 初期位置を設定
@@ -487,16 +787,31 @@ class DokodemoUI extends HTMLElement {
             closeButton.addEventListener("click", (e) => {
                 e.stopPropagation();
                 e.preventDefault();
-                this.hidden = true;
+                if (this.isExternalMode && this.targetElement) {
+                    // 外部モード: ターゲット要素を非表示
+                    this.targetElement.style.setProperty("display", "none", "important");
+                    this.hidden = true;
+                }
+                else {
+                    this.hidden = true;
+                }
                 this.dispatchEvent(new CustomEvent("close", { bubbles: true }));
             });
         }
     }
     show() {
         this.hidden = false;
+        if (this.isExternalMode && this.targetElement) {
+            this.targetElement.style.removeProperty("display");
+            // 位置を同期
+            requestAnimationFrame(() => this.syncWithTarget());
+        }
     }
     hide() {
         this.hidden = true;
+        if (this.isExternalMode && this.targetElement) {
+            this.targetElement.style.setProperty("display", "none", "important");
+        }
     }
     startDrag(clientX, clientY) {
         this.isDragging = true;
@@ -523,16 +838,38 @@ class DokodemoUI extends HTMLElement {
     }
     updatePosition(clientX, clientY) {
         this.hasMoved = true;
-        // ドラッグ中は left/top を使用（right/bottom をクリア）
-        this.style.right = "";
-        this.style.bottom = "";
         const newX = clientX - this.dragOffsetX;
         const newY = clientY - this.dragOffsetY;
-        // 画面外に出ないように制限
-        const maxX = window.innerWidth - this.offsetWidth;
-        const maxY = window.innerHeight - this.offsetHeight;
-        this.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
-        this.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
+        if (this.isExternalMode && this.targetElement) {
+            // 外部モード: ターゲット要素の位置を直接更新
+            const targetWidth = this.targetElement.offsetWidth;
+            const targetHeight = this.targetElement.offsetHeight;
+            // 画面外に出ないように制限
+            const maxX = window.innerWidth - targetWidth;
+            const maxY = window.innerHeight - targetHeight;
+            const clampedX = Math.max(0, Math.min(newX, maxX));
+            const clampedY = Math.max(0, Math.min(newY, maxY));
+            // right/bottom で位置を更新（!important で上書き）
+            const newRight = window.innerWidth - clampedX - targetWidth;
+            const newBottom = window.innerHeight - clampedY - targetHeight;
+            this.targetElement.style.setProperty("right", `${newRight}px`, "important");
+            this.targetElement.style.setProperty("bottom", `${newBottom}px`, "important");
+            this.targetElement.style.setProperty("left", "auto", "important");
+            this.targetElement.style.setProperty("top", "auto", "important");
+            // オーバーレイも追従
+            this.style.left = `${clampedX}px`;
+            this.style.top = `${clampedY}px`;
+        }
+        else {
+            // 通常モード: 自身の位置を更新
+            this.style.right = "";
+            this.style.bottom = "";
+            // 画面外に出ないように制限
+            const maxX = window.innerWidth - this.offsetWidth;
+            const maxY = window.innerHeight - this.offsetHeight;
+            this.style.left = `${Math.max(0, Math.min(newX, maxX))}px`;
+            this.style.top = `${Math.max(0, Math.min(newY, maxY))}px`;
+        }
     }
     endDrag() {
         this.isDragging = false;
@@ -573,6 +910,20 @@ class DokodemoUI extends HTMLElement {
         this.removeEventListener("touchstart", this.onTouchStart);
         this.removeEventListener("mousemove", this.onMouseMoveForCursor);
         this.removeEventListener("mouseleave", this.onMouseLeaveForCursor);
+        // 外部モードのクリーンアップ
+        if (this.externalObserver) {
+            this.externalObserver.disconnect();
+            this.externalObserver = null;
+        }
+        if (this.externalResizeObserver) {
+            this.externalResizeObserver.disconnect();
+            this.externalResizeObserver = null;
+        }
+        if (this.attributeForwardObserver) {
+            this.attributeForwardObserver.disconnect();
+            this.attributeForwardObserver = null;
+        }
+        window.removeEventListener("resize", this.syncWithTarget);
     }
 }
 customElements.define("dokodemo-ui", DokodemoUI);

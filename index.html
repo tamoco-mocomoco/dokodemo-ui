@@ -123,8 +123,79 @@
     </div>
   </dokodemo-ui>
 
+  <!-- Web Components の例 -->
+  <dokodemo-ui closable position="top-left" padding="80">
+    <mini-clock></mini-clock>
+  </dokodemo-ui>
+
+  <!-- 外部モードの例（サードパーティウィジェットを想定） -->
+  <div id="third-party-widget" style="
+    position: fixed;
+    right: 20px;
+    bottom: 100px;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 16px 20px;
+    border-radius: 50px;
+    box-shadow: 0 4px 15px rgba(240, 87, 108, 0.4);
+    font-weight: bold;
+    cursor: pointer;
+    z-index: 9998;
+  ">
+    💬 サードパーティ風
+  </div>
+  <dokodemo-ui id="external-demo" target="#third-party-widget" mode="external" closable close-style="simple" close-position="outside" close-color="white"></dokodemo-ui>
+
   <script type="module">
     import './dokodemo-ui.js';
+
+    // Web Component の定義
+    class MiniClock extends HTMLElement {
+      constructor() {
+        super();
+        this.attachShadow({ mode: 'open' });
+        this.shadowRoot.innerHTML = `
+          <style>
+            :host {
+              display: block;
+            }
+            .clock {
+              background: #1a1a2e;
+              color: #0ff;
+              padding: 16px 24px;
+              border-radius: 12px;
+              font-family: 'Courier New', monospace;
+              font-size: 24px;
+              box-shadow: 0 4px 12px rgba(0,0,0,0.3), inset 0 0 20px rgba(0,255,255,0.1);
+              border: 1px solid rgba(0,255,255,0.3);
+              text-align: center;
+            }
+            .label {
+              font-size: 10px;
+              color: rgba(0,255,255,0.6);
+              margin-bottom: 4px;
+            }
+          </style>
+          <div class="clock">
+            <div class="label">Web Component</div>
+            <span id="time">00:00:00</span>
+          </div>
+        `;
+        this.timeEl = this.shadowRoot.getElementById('time');
+      }
+      connectedCallback() {
+        this.update();
+        this.interval = setInterval(() => this.update(), 1000);
+      }
+      disconnectedCallback() {
+        clearInterval(this.interval);
+      }
+      update() {
+        const now = new Date();
+        this.timeEl.textContent = now.toLocaleTimeString('ja-JP');
+      }
+    }
+    customElements.define('mini-clock', MiniClock);
 
     // 再表示ボタン
     document.getElementById('show-all').addEventListener('click', () => {
