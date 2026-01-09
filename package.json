@@ -1,6 +1,6 @@
 {
   "name": "dokodemo-ui",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "ドラッグで自由に移動できるWeb Component",
   "main": "dokodemo-ui.js",
   "types": "dokodemo-ui.d.ts",
